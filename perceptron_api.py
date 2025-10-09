@@ -125,10 +125,13 @@ def get_features():
 # MAIN
 # -----------------------------
 if __name__ == "__main__":
-    # Train if models are missing
-    if not os.path.exists(os.path.join(BASE_DIR, "perceptron_model.pkl")):
+    # If model files don’t exist, train and save them
+    if not (os.path.exists(os.path.join(BASE_DIR, "perceptron_model.pkl")) and
+            os.path.exists(os.path.join(BASE_DIR, "scaler.pkl")) and
+            os.path.exists(os.path.join(BASE_DIR, "features.pkl"))):
+        print("⚠️ Model files not found. Training new model...")
         train_and_save()
+    else:
+        print("✅ Model files found, skipping training.")
 
-    # Render expects PORT from env, fallback to 5000 locally
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=5000)
