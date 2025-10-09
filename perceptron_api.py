@@ -117,6 +117,9 @@ def predict():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+@app.route("/features", methods=["GET"])
+def get_features():
+    return jsonify({"feature_names": feature_names})
 
 # -----------------------------
 # MAIN
