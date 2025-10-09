@@ -1,16 +1,17 @@
+import os
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 import joblib
 from flask import Flask, request, jsonify
-import os
 
 # -----------------------------
 # Perceptron Definition
 # -----------------------------
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
+
 
 class Perceptron:
     def __init__(self, learning_rate=1e-5, n_iters=10000):
@@ -47,13 +48,15 @@ class Perceptron:
 
 
 # -----------------------------
-# TRAINING FUNCTION
+# TRAINING (Run Once)
 # -----------------------------
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
 def train_and_save():
-    # Load dataset from repo (same folder)
-    dataset_path = os.path.join(BASE_DIR, "synthetic_perceptron_dataset.xlsx")
+    # Path to dataset (update if dataset is elsewhere in repo)
+    dataset_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "synthetic_perceptron_dataset.xlsx"
+    )
+
     df = pd.read_excel(dataset_path)
 
     X = df.drop("BOUGHT", axis=1).values
@@ -70,18 +73,20 @@ def train_and_save():
     p = Perceptron(learning_rate=0.0001, n_iters=10000)
     p.fit(x_train, y_train)
 
-    # Save model, scaler, features
-    joblib.dump(p, os.path.join(BASE_DIR, "perceptron_model.pkl"))
-    joblib.dump(scaler, os.path.join(BASE_DIR, "scaler.pkl"))
-    joblib.dump(feature_names, os.path.join(BASE_DIR, "features.pkl"))
+    # Save both model and scaler
+    joblib.dump(p, "perceptron_model.pkl")
+    joblib.dump(scaler, "scaler.pkl")
+    joblib.dump(feature_names, "features.pkl")
 
-    print("✅ Model and scaler saved!")
+    print("✅ Model, scaler, and features saved!")
 
 
 # -----------------------------
 # FLASK API
 # -----------------------------
 app = Flask(__name__)
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 try:
     p = joblib.load(os.path.join(BASE_DIR, "perceptron_model.pkl"))
@@ -92,13 +97,14 @@ except FileNotFoundError:
     p = None
     scaler = None
     feature_names = None
-    print("⚠️ No saved model found. Will train on startup.")
+    print("⚠️ No saved model found. Run train_and_save() to generate .pkl files.")
 
 
 @app.route("/predict", methods=["POST"])
 def predict():
     try:
         data = request.get_json()
+        # Expect JSON with keys matching feature_names
         inputs = [data[name] for name in feature_names]
         sample_scaled = scaler.transform([inputs])[0]
         pred, score, conf = p.predict_single(sample_scaled)
@@ -116,13 +122,10 @@ def predict():
 # MAIN
 # -----------------------------
 if __name__ == "__main__":
-    model_path = os.path.join(BASE_DIR, "perceptron_model.pkl")
-    if not os.path.exists(model_path):
-        print("⚡ Training model on server...")
+    # Train if models are missing
+    if not os.path.exists(os.path.join(BASE_DIR, "perceptron_model.pkl")):
         train_and_save()
-        p = joblib.load(model_path)
-        scaler = joblib.load(os.path.join(BASE_DIR, "scaler.pkl"))
-        feature_names = joblib.load(os.path.join(BASE_DIR, "features.pkl"))
-    else:
-        print("✅ Using existing trained model")
-    app.run(host="0.0.0.0", port=5000)
+
+    # Render expects PORT from env, fallback to 5000 locally
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
