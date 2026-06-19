@@ -100,7 +100,7 @@ if __name__ == "__main__":
 
     # ✅ Example custom input with both numeric and binary (must match feature order in Excel)
     #\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
-    sample_input = [1, 120, 1, 34, 14, 1]
+    sample_input = [1, 300, 1, 35, 12, 0]
 
     # New: scale input using the same scaler
     sample_input_scaled = scaler.transform([sample_input])[0]
